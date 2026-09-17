@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#24483d">
+  <title>Cleaner onboarding | Cleaning.direct</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#f5f7f5;color:#17231d;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.wrap{max-width:760px;margin:auto;padding:22px 14px 48px}.brand{font-weight:900;font-size:24px;color:#24483d;margin:4px 0 18px}.card{background:#fff;border:1px solid #d7dfda;border-radius:20px;padding:22px;box-shadow:0 10px 30px #0000000a}h1{font-size:30px;line-height:1.08;margin:0 0 8px}h2{font-size:19px;margin:28px 0 10px}.lead{color:#526159;margin:0 0 18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.full{grid-column:1/-1}label,legend{display:block;font-weight:750;margin:0 0 6px}input,select,textarea{width:100%;font:inherit;padding:12px 13px;border:1px solid #aebbb4;border-radius:10px;background:#fff}textarea{min-height:90px}.checks{display:grid;grid-template-columns:1fr 1fr;gap:8px}.check{display:flex;gap:9px;align-items:flex-start;font-weight:500}.check input{width:auto;margin-top:4px}.hint{font-size:13px;color:#637068;margin-top:5px}.notice{background:#edf3ef;padding:12px 14px;border-radius:11px;margin:16px 0}.warn{background:#fff4da}.button{width:100%;border:0;border-radius:11px;padding:15px;background:#24483d;color:#fff;font-weight:850;font-size:16px;cursor:pointer}.button:disabled{opacity:.65}.error{display:none;background:#fff0ee;color:#8b2a20;padding:12px 14px;border-radius:11px;margin-bottom:16px}.progress{display:flex;gap:7px;flex-wrap:wrap;margin:15px 0 22px}.pill{padding:6px 9px;border-radius:999px;background:#edf1ee;font-size:12px;font-weight:700}@media(max-width:620px){.grid,.checks{grid-template-columns:1fr}.full{grid-column:auto}.card{padding:18px}h1{font-size:27px}}
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <div class="brand">cleaning.direct</div>
+  <section class="card">
+    <div id="error" class="error" role="alert"></div>
+    <div class="progress" aria-label="Onboarding progress"><span class="pill">Application</span><span class="pill">Right to Work</span><span class="pill">Payout setup</span><span class="pill">Done</span></div>
+    <h1>Apply once. Finish everything now.</h1>
+    <p class="lead">Complete your cleaner details, Right to Work route and payout setup in one journey. After this, Cleaning.direct runs the checks in the background.</p>
+    <form id="application">
+      <input name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-10000px" aria-hidden="true">
+      <h2>Your details</h2>
+      <div class="grid">
+        <div><label for="firstName">First name</label><input id="firstName" name="firstName" required maxlength="80" autocomplete="given-name"></div>
+        <div><label for="lastName">Last name</label><input id="lastName" name="lastName" required maxlength="80" autocomplete="family-name"></div>
+        <div><label for="email">Email</label><input id="email" name="email" type="email" required autocomplete="email"></div>
+        <div><label for="phone">Mobile</label><input id="phone" name="phone" type="tel" required autocomplete="tel"></div>
+        <div class="full"><label for="addressLine1">Address line 1</label><input id="addressLine1" name="addressLine1" required minlength="5" autocomplete="address-line1"></div>
+        <div class="full"><label for="addressLine2">Address line 2 <span class="hint">(optional)</span></label><input id="addressLine2" name="addressLine2" autocomplete="address-line2"></div>
+        <div><label for="city">Town or city</label><input id="city" name="city" required autocomplete="address-level2"></div>
+        <div><label for="county">County <span class="hint">(optional)</span></label><input id="county" name="county" autocomplete="address-level1"></div>
+        <div class="full"><label for="postcode">Home postcode</label><input id="postcode" name="postcode" required autocomplete="postal-code" placeholder="KT11 1AA"></div>
+      </div>
+      <h2>Work preferences</h2>
+      <div class="grid">
+        <div class="full"><label for="coverageAreas">Areas you can reliably cover</label><input id="coverageAreas" name="coverageAreas" required placeholder="Weybridge, Esher, KT11, SW15"><div class="hint">Separate towns or postcode districts with commas. Enter them once — they are saved directly to your work profile.</div></div>
+        <div><label for="experienceYears">Years of cleaning experience</label><input id="experienceYears" name="experienceYears" type="number" min="0" max="60" step="0.5" required value="0"></div>
+        <div><label for="message">Anything useful to add <span class="hint">(optional)</span></label><input id="message" name="message" maxlength="800" placeholder="Travel, experience or preferred hours"></div>
+      </div>
+      <fieldset><legend>Services you can provide</legend><div class="checks">
+        <label class="check"><input type="checkbox" name="services" value="standard" checked><span>Standard domestic cleaning</span></label>
+        <label class="check"><input type="checkbox" name="services" value="deep"><span>Deep cleaning</span></label>
+        <label class="check"><input type="checkbox" name="services" value="end_of_tenancy"><span>End of tenancy</span></label>
+        <label class="check"><input type="checkbox" name="services" value="office"><span>Office cleaning</span></label>
+        <label class="check"><input type="checkbox" name="services" value="airbnb"><span>Airbnb turnover</span></label>
+      </div></fieldset>
+      <fieldset><legend>Days usually available</legend><div class="checks" id="days"></div></fieldset>
+      <h2>Right to Work</h2>
+      <label for="rtwRoute">Choose the route that applies to you</label>
+      <select id="rtwRoute" name="rtwRoute" required>
+        <option value="">Choose one</option>
+        <option value="home_office_online">I have a Home Office Right to Work share code</option>
+        <option value="rtw_dvsp">I am British or Irish with a suitable passport</option>
+        <option value="manual_document">I need another permitted original-document route</option>
+      </select>
+      <div id="shareFields" class="grid" style="display:none;margin-top:14px">
+        <div><label for="dateOfBirth">Date of birth</label><input id="dateOfBirth" name="dateOfBirth" type="date" autocomplete="bday"></div>
+        <div><label for="shareCode">Right to Work share code</label><input id="shareCode" name="shareCode" maxlength="14" autocomplete="off" placeholder="W12 345 678"><div class="hint">Use the 9-character W-prefixed code generated specifically for Right to Work.</div></div>
+      </div>
+      <div class="notice warn">British/Irish digital passport verification launches automatically when the certified provider is available. If it is temporarily unavailable, your application remains saved and the prescribed original-document route is used without making you re-enter everything.</div>
+      <h2>Confirm</h2>
+      <label class="check"><input type="checkbox" name="hasRightToWork" value="yes" required><span>I confirm I have the right to work in the UK and understand that the prescribed check must pass before I can receive jobs.</span></label><br>
+      <label class="check"><input type="checkbox" name="selfEmployed" value="yes" required><span>I confirm I am genuinely self-employed: I choose whether to accept jobs and when I am available, and I am responsible for my own tax, National Insurance, equipment and any insurance required under the contractor agreement.</span></label><br>
+      <label class="check"><input type="checkbox" name="consent" value="yes" required><span>I consent to Cleaning.direct storing these details to process and manage my cleaner application.</span></label>
+      <div class="notice"><strong>Next:</strong> after Apply you continue directly into any required identity handoff and secure Stripe payout setup. Cleaning.direct does not store your account number or sort code.</div>
+      <button id="submit" class="button" type="submit">Apply and finish onboarding</button>
+    </form>
+  </section>
+</main>
+<script>
+const API='https://fdnnvihxjyzfzbvakdqf.supabase.co/functions/v1/public-intake';
+const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+document.getElementById('days').innerHTML=days.map(d=>`<label class="check"><input type="checkbox" name="availability" value="${d}"><span>${d}</span></label>`).join('');
+const form=document.getElementById('application'),err=document.getElementById('error'),btn=document.getElementById('submit'),route=document.getElementById('rtwRoute'),share=document.getElementById('shareFields');
+function syncRoute(){const isShare=route.value==='home_office_online';share.style.display=isShare?'grid':'none';document.getElementById('dateOfBirth').required=isShare;document.getElementById('shareCode').required=isShare}
+route.addEventListener('change',syncRoute);syncRoute();
+function showError(message){err.textContent=message;err.style.display='block';err.scrollIntoView({behavior:'smooth',block:'center'})}
+form.addEventListener('submit',async event=>{
+  event.preventDefault();err.style.display='none';const f=new FormData(form),availability=f.getAll('availability'),services=f.getAll('services');
+  if(!availability.length)return showError('Choose at least one day you are usually available.');
+  if(!services.length)return showError('Choose at least one service you can provide.');
+  btn.disabled=true;btn.textContent='Saving and starting checks…';
+  const q=new URLSearchParams(location.search);
+  const payload={kind:'cleaner_application',idempotencyKey:'cleaner-inline-'+Date.now()+'-'+crypto.randomUUID().replaceAll('-','').slice(0,16),website:String(f.get('website')||''),firstName:String(f.get('firstName')||''),lastName:String(f.get('lastName')||''),email:String(f.get('email')||''),phone:String(f.get('phone')||''),addressLine1:String(f.get('addressLine1')||''),addressLine2:String(f.get('addressLine2')||''),city:String(f.get('city')||''),county:String(f.get('county')||''),postcode:String(f.get('postcode')||''),coverageAreas:String(f.get('coverageAreas')||'').split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean),experienceYears:Number(f.get('experienceYears')||0),hasRightToWork:f.get('hasRightToWork')==='yes',hasInsurance:false,selfEmployed:f.get('selfEmployed')==='yes',consent:f.get('consent')==='yes',services,availability,message:String(f.get('message')||''),attribution:{source:q.get('utm_source')||q.get('source')||'direct',medium:q.get('utm_medium')||'one_session_onboarding',campaign:q.get('utm_campaign')||undefined},completeOnboarding:true,rtwRoute:String(f.get('rtwRoute')||''),dateOfBirth:String(f.get('dateOfBirth')||''),shareCode:String(f.get('shareCode')||'')};
+  try{
+    const response=await fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});const out=await response.json();
+    if(!response.ok||!out.ok){const messages={invalid_contact_details:'Check your name, email, mobile number and UK postcode.',invalid_address:'Enter your full home address and town/city.',invalid_application:'Complete the required work preferences and declarations.',invalid_rtw_route:'Choose the Right to Work route that applies to you.',invalid_rtw_details:'Check the Right to Work share code and date of birth.',rate_limited:'This application has already been submitted several times today.'};throw new Error(messages[out.error]||'We could not save your application just now.');}
+    if(out.continueUrl){location.assign(out.continueUrl);return;}
+    showError('Your application is safely saved, but the next provider step could not start automatically. You do not need to submit it again; Cleaning.direct has logged the recovery case.');
+  }catch(error){showError(error instanceof Error?error.message:'We could not save your application just now.');}
+  finally{btn.disabled=false;btn.textContent='Apply and finish onboarding';}
+});
+</script>
+</body>
+</html>
