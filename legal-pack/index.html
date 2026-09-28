@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+  <meta name="referrer" content="no-referrer">
+  <title>Cleaner legal pack · Cleaning.direct</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#f5f2ea;color:#162019;font-family:system-ui,-apple-system,sans-serif}.w{max-width:760px;margin:auto;padding:24px 16px 56px}.brand{font-weight:850;font-size:23px;color:#24483d;margin:8px 0 18px}.card{background:#fff;border:1px solid #ddd8ca;border-radius:18px;padding:22px;margin:0 0 16px;box-shadow:0 8px 24px #00000008}h1{font-size:27px;line-height:1.2}h2{font-size:20px}.note{background:#fff4d9;padding:12px 14px;border-radius:10px;line-height:1.5}.ok{background:#e5f4e9;padding:14px;border-radius:10px}.button,button{display:block;width:100%;border:0;border-radius:11px;padding:14px 16px;background:#24483d;color:#fff;font-weight:800;font-size:16px;text-align:center;text-decoration:none;margin-top:14px}.check{display:flex;gap:10px;align-items:flex-start;margin:18px 0}.check input{width:auto;margin-top:5px}.doc{white-space:pre-wrap;line-height:1.55}.docmeta{font-size:12px;color:#606861;word-break:break-all;margin-top:14px}.error{background:#fff0ee;color:#7f2119;padding:14px;border-radius:10px}
+  </style>
+</head>
+<body>
+<main class="w"><div class="brand">cleaning.direct · cleaner legal pack</div><div id="app"><section class="card"><h1>Loading…</h1></section></div></main>
+<script>
+(()=>{
+  'use strict';
+  const API='https://fdnnvihxjyzfzbvakdqf.supabase.co/functions/v1';
+  const hash=new URLSearchParams(location.hash.replace(/^#/,''));
+  const token=(hash.get('token')||'').trim(), stage=hash.get('stage')||'start', result=hash.get('result')||'', rights=hash.get('rightsStatus')||'';
+  const app=document.getElementById('app');
+  const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const invalid=()=>app.innerHTML='<section class="card"><h1>Invalid or expired link</h1><div class="error">This legal-pack link is unavailable. Cleaning.direct will issue a fresh secure link if needed.</div></section>';
+  const form=(action,inner)=>'<form method="post" action="'+API+'/cleaner-legal-pack-action"><input type="hidden" name="token" value="'+esc(token)+'"><input type="hidden" name="action" value="'+esc(action)+'">'+inner+'</form>';
+  if(result==='accepted'){history.replaceState(null,'',location.pathname+'#result=accepted');app.innerHTML='<section class="card"><h1>Accepted</h1><div class="ok">Your Key Information Document was provided and your acceptance of the current Cleaning.direct terms has been recorded. Your onboarding can now continue.</div></section>';return;}
+  if(result==='invalid'){history.replaceState(null,'',location.pathname+'#result=invalid');invalid();return;}
+  if(!/^[a-f0-9]{64}$/i.test(token)){invalid();return;}
+  if(stage!=='docs'){
+    app.innerHTML='<section class="card"><h1>Your KID and terms are ready</h1><p>Opening this link did not accept anything.</p><p class="note">Choose the button below to formally receive your Key Information Document and open the exact terms that apply to your current onboarding status.</p>'+form('open','<button type="submit">Open my KID and terms</button>')+'</section>';return;
+  }
+  if(!['genuine_self_employed','worker'].includes(rights)){invalid();return;}
+  fetch(API+'/cleaner-legal-docs-public?rightsStatus='+encodeURIComponent(rights)+'&token='+encodeURIComponent(token),{cache:'no-store',referrerPolicy:'no-referrer'})
+    .then(async r=>{const d=await r.json();if(!r.ok||!d.ok)throw new Error('unavailable');return d;})
+    .then(d=>{
+      const k=d.kid,t=d.terms;
+      app.innerHTML='<section class="card"><div class="note"><strong>Key Information Document</strong><br>This exact document is recorded as provided before the terms acceptance step.</div><div class="doc" id="kid"></div><div class="docmeta">KID version: '+esc(k.version_key)+' · SHA-256: '+esc(k.content_sha256)+'</div></section><section class="card"><div class="doc" id="terms"></div><div class="docmeta">Terms version: '+esc(t.version_key)+' · SHA-256: '+esc(t.content_sha256)+'</div>'+form('accept','<input type="hidden" name="kidVersionId" value="'+esc(k.id)+'"><input type="hidden" name="kidSha256" value="'+esc(k.content_sha256)+'"><input type="hidden" name="termsVersionId" value="'+esc(t.id)+'"><input type="hidden" name="termsSha256" value="'+esc(t.content_sha256)+'"><label class="check"><input type="checkbox" name="accepted" value="yes" required><span>I have received the KID, read these terms and agree to the current terms of engagement.</span></label><button type="submit">Accept current terms</button>')+'</section>';
+      document.getElementById('kid').textContent=String(k.content_markdown||'');
+      document.getElementById('terms').textContent=String(t.content_markdown||'');
+    }).catch(invalid);
+})();
+</script>
+</body>
+</html>
