@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#183c32">
+  <title>Right to Work · Cleaning.direct</title>
+  <style>
+    *{box-sizing:border-box}html{background:#f3efe7}body{margin:0;min-height:100vh;background:linear-gradient(180deg,#f8f3e9 0,#f3efe7 48%,#eef2ed 100%);color:#183c32;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.wrap{max-width:680px;margin:auto;padding:20px 14px 52px}.brand{font:700 25px Georgia,serif;letter-spacing:-.4px;margin:4px 3px 18px}.card{background:#fffdf8;border:1px solid #d9ded7;border-radius:24px;padding:24px;box-shadow:0 18px 55px rgba(25,55,45,.08)}.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:#9a563a;margin-bottom:10px}h1{font:700 31px/1.08 Georgia,serif;letter-spacing:-.5px;margin:0 0 10px}h2{font-size:18px;margin:25px 0 10px}p{color:#526159;line-height:1.55}.progress{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:20px 0 24px}.bar{height:6px;border-radius:99px;background:#e6e9e6}.bar.on{background:#b96543}.bar.ok{background:#2f725d}.box{padding:15px 16px;border-radius:15px;background:#edf5f0;border:1px solid #d9e3dd;margin:17px 0}.box.warn{background:#fff5dc;border-color:#ead8a7}.box.bad{background:#fff0ed;border-color:#edc5ba}.box b{display:block;margin-bottom:4px}.btn{display:block;width:100%;border:0;border-radius:13px;background:#183f34;color:#fff;padding:15px 18px;font-size:16px;font-weight:850;text-align:center;text-decoration:none;cursor:pointer}.btn[aria-disabled="true"]{opacity:.55;pointer-events:none}.facts{display:grid;gap:10px}.fact{display:flex;gap:11px;background:#f6f6f1;padding:12px;border-radius:13px}.num{width:25px;height:25px;flex:0 0 25px;border-radius:50%;background:#dfece4;display:grid;place-items:center;font-weight:900}.fact b{display:block;font-size:14px;margin-bottom:2px}.fact span,.small{font-size:12px;color:#6b776f;line-height:1.45}.legal{border-top:1px solid #e7e7df;margin-top:22px;padding-top:14px}.spinner{display:inline-block;width:15px;height:15px;border:2px solid #b8c8c0;border-top-color:#2e705b;border-radius:50%;animation:spin .8s linear infinite;margin-right:7px;vertical-align:-2px}.loading{min-height:250px;display:grid;place-items:center;text-align:center}@keyframes spin{to{transform:rotate(360deg)}}@media(max-width:520px){.wrap{padding:10px 9px 38px}.card{padding:20px;border-radius:20px}h1{font-size:28px}}
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <div class="brand">cleaning.direct</div>
+  <section id="card" class="card" aria-live="polite">
+    <div class="loading"><div><span class="spinner"></span><p>Loading your secure Right to Work step…</p></div></div>
+  </section>
+</main>
+<script>
+const API='https://fdnnvihxjyzfzbvakdqf.supabase.co/functions/v1/cleaner-rtw-status';
+const START='https://fdnnvihxjyzfzbvakdqf.supabase.co/functions/v1/cleaner-rtw-start';
+const p=new URLSearchParams(location.search),token=(p.get('token')||'').trim(),returned=(p.get('return')||'').trim();
+const card=document.getElementById('card');
+const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const progress=n=>`<div class="progress"><i class="bar ${n>0?'ok':'on'}"></i><i class="bar ${n>1?'ok':n===1?'on':''}"></i><i class="bar ${n>2?'ok':n===2?'on':''}"></i></div>`;
+const facts=`<h2>What happens</h2><div class="facts"><div class="fact"><div class="num">1</div><div><b>Yoti opens securely</b><span>Follow the identity and Right to Work steps shown for you.</span></div></div><div class="fact"><div class="num">2</div><div><b>The result returns automatically</b><span>No emailing passport photos and no repeating your Cleaning.direct application.</span></div></div><div class="fact"><div class="num">3</div><div><b>Your RTW gate updates</b><span>Qualifying digital evidence closes the gate automatically. Genuine exceptions stay blocked from jobs and route separately.</span></div></div></div>`;
+function shell(name,lead,step,box,body=''){card.innerHTML=`<div class="eyebrow">Cleaner onboarding · Right to Work</div><h1>${name}</h1><p>${lead}</p>${progress(step)}${box}${body}<div class="legal"><p class="small">Your cleaner profile cannot receive jobs until the required Right to Work gate is satisfied. Digital verification is provided through Yoti when the production connection is available.</p></div>`}
+function startButton(label,force=false){const href=`${START}?token=${encodeURIComponent(token)}${force?'&force=1':''}`;return `<a class="btn" href="${href}">${label}</a>`}
+function render(s){let state=s.state;if(returned==='error'&&!['verified','expired','closed','provider_wait','exception'].includes(state))state='retry';const first=esc(s.firstName||'there');
+ if(state==='verified')return shell('You’re verified','Your Right to Work step is complete and stored securely.',3,'<div class="box"><b>✓ Right to Work verified</b>You do not need to send any more RTW documents.</div>','<a class="btn" href="https://cleaning.direct/portal?mode=cleaner">Continue to cleaner account</a>');
+ if(state==='processing'){shell(`Hi ${first}, verification in progress`,'Finish the Yoti check if it is still open. This page updates automatically.',1,'<div class="box"><b><span class="spinner"></span>Waiting for Yoti</b>Your application is saved while the provider completes the check.</div>',facts);return poll('processing',3000)}
+ if(state==='finalising'){shell(`Hi ${first}, finalising your result`,'Yoti has returned the check. Cleaning.direct is validating and storing the evidence automatically.',2,'<div class="box"><b><span class="spinner"></span>Almost done</b>No action is needed from you while this finishes.</div>');return poll('finalising',2500)}
+ if(state==='exception')return shell(`Hi ${first}, your application is saved`,'Your digital result needs a prescribed exception route.',1,'<div class="box warn"><b>Nothing to repeat</b>Do not redo Yoti or send documents to the owner. Your profile stays non-assignable while the specialist/compliance route handles the exception.</div>');
+ if(state==='provider_wait')return shell(`Hi ${first}, your application is saved`,'The Yoti production connection is being completed.',0,'<div class="box warn"><b>No need to apply again</b>Your RTW step will resume when the provider connection is ready.</div>','<a class="btn" aria-disabled="true">Secure Yoti verification coming online</a>');
+ if(state==='expired')return shell(`Hi ${first}, this secure link expired`,'Your cleaner application is still retained.',0,'<div class="box warn"><b>A fresh link can be issued</b>You will not need to repeat the application.</div>');
+ if(state==='closed')return shell('Application closed','No further Right to Work action is required.',0,'<div class="box bad"><b>This application is no longer open</b></div>');
+ if(state==='retry')return shell(`Hi ${first}, try the secure check again`,'The previous Yoti session did not complete, but your application is safe.',0,'<div class="box bad"><b>Nothing has been lost</b>Start a fresh Yoti session below.</div>',`${facts}${startButton('Try Yoti verification again',true)}`);
+ return shell(`Hi ${first}, verify your Right to Work`,'One secure digital check. No repeated forms and no routine owner review.',0,'<div class="box"><b>Ready for your secure digital check</b>Yoti will guide you through the route that applies to you. Most people finish in a few minutes.</div>',`${facts}${startButton('Start secure Yoti verification')}`);
+}
+async function load(){if(!/^[a-f0-9]{48}$/i.test(token)){card.innerHTML='<div class="eyebrow">Right to Work</div><h1>This secure link is invalid</h1><p>Use the latest link sent by Cleaning.direct.</p>';return}try{const r=await fetch(`${API}?token=${encodeURIComponent(token)}`,{cache:'no-store'}),s=await r.json();if(!r.ok||!s.ok)throw new Error(s.error||'unavailable');render(s)}catch{card.innerHTML='<div class="eyebrow">Right to Work</div><h1>We could not load your verification</h1><p>Your application is not affected. Try this secure link again in a moment.</p>'}}
+let timer=null;function poll(expected,ms){clearInterval(timer);timer=setInterval(async()=>{try{const r=await fetch(`${API}?token=${encodeURIComponent(token)}`,{cache:'no-store'}),s=await r.json();if(s.ok&&s.state!==expected){clearInterval(timer);render(s)}}catch{}},ms)}
+load();
+</script>
+</body>
+</html>
