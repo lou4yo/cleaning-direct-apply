@@ -23,7 +23,7 @@
     <div id="error" class="error" role="alert"></div>
     <div class="progress" aria-label="Onboarding progress"><span class="pill">Application</span><span class="pill">Right to Work</span><span class="pill">Payout setup</span><span class="pill">Done</span></div>
     <h1>Self-employed cleaner opportunities in Surrey</h1>
-    <p class="lead">Apply once for flexible domestic cleaning opportunities around Weybridge, Esher, Cobham, Leatherhead, Walton-on-Thames and nearby Surrey areas. You choose which jobs to accept and when you are available. Complete your cleaner details, Right to Work route and payout setup in one journey.</p>
+    <p class="lead">Apply once for flexible domestic cleaning opportunities around Weybridge, Esher, Cobham, Leatherhead, Walton-on-Thames and nearby Surrey areas. You choose which jobs to accept and when you are available. Complete your cleaner details and continue straight into a quick secure Right to Work check.</p>
     <form id="application">
       <input name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-10000px" aria-hidden="true">
       <h2>Your details</h2>
@@ -60,37 +60,31 @@
         <label class="check"><input type="checkbox" name="services" value="airbnb"><span>Airbnb turnover</span></label>
       </div></fieldset>
       <fieldset><legend>Days usually available</legend><div class="checks" id="days"></div></fieldset>
-      <h2>Right to Work</h2>
-      <label for="rtwRoute">Choose the route that applies to you</label>
+      <h2>Quick Right to Work check</h2>
+      <p class="lead">After you apply, our secure registered digital verification service guides you through the right online check. It can use a suitable UK/Irish passport or a Home Office share-code route where applicable, so you do not need to work out the legal process yourself.</p>
+      <label for="rtwRoute">How would you like to prove your Right to Work?</label>
       <select id="rtwRoute" name="rtwRoute" required>
-        <option value="">Choose one</option>
-        <option value="home_office_online">I have a Home Office Right to Work share code</option>
-        <option value="rtw_dvsp">I am British or Irish with a suitable passport</option>
-        <option value="manual_document">I need another permitted original-document route</option>
+        <option value="rtw_dvsp" selected>Verify online — quickest</option>
+        <option value="manual_document">I need another legal way to prove my Right to Work</option>
       </select>
-      <div id="shareFields" class="grid" style="display:none;margin-top:14px">
-        <div><label for="dateOfBirth">Date of birth</label><input id="dateOfBirth" name="dateOfBirth" type="date" autocomplete="bday"></div>
-        <div><label for="shareCode">Right to Work share code</label><input id="shareCode" name="shareCode" maxlength="14" autocomplete="off" placeholder="W12 345 678"><div class="hint">Use the 9-character W-prefixed code generated specifically for Right to Work.</div></div>
-      </div>
-      <div class="notice warn">British/Irish digital passport verification launches automatically when the certified provider is available. If it is temporarily unavailable, your application remains saved and the prescribed original-document route is used without making you re-enter everything.</div>
+      <div class="notice">The online route is designed to take only a few minutes. If digital verification is not suitable for you, choose the alternative route and Cleaning.direct will keep your application open while arranging the prescribed check. No one is rejected just for choosing a different lawful route.</div>
       <h2>Confirm</h2>
       <label class="check"><input type="checkbox" name="hasRightToWork" value="yes" required><span>I confirm I have the right to work in the UK and understand that the prescribed check must pass before I can receive jobs.</span></label><br>
       <label class="check"><input type="checkbox" name="selfEmployed" value="yes" required><span>I confirm I am genuinely self-employed: I choose whether to accept jobs and when I am available, and I am responsible for my own tax, National Insurance, equipment and any insurance required under the contractor agreement.</span></label><br>
       <label class="check"><input type="checkbox" name="consent" value="yes" required><span>I consent to Cleaning.direct storing these details to process and manage my cleaner application.</span></label>
-      <div class="notice"><strong>Next:</strong> after Apply you continue directly into any required identity handoff and secure Stripe payout setup. Cleaning.direct does not store your account number or sort code.</div>
+      <div class="notice"><strong>Next:</strong> after Apply you continue directly into the secure Right to Work check. The rest of your onboarding, including payout setup, is then progressed automatically without asking you to complete this application again.</div>
       <button id="submit" class="button" type="submit">Apply and finish onboarding</button>
     </form>
   </section>
 </main>
 <script>
-const API='https://fdnnvihxjyzfzbvakdqf.supabase.co/functions/v1/cleaner-application-intake';
+const API='https://fdnnvihxjyzfzbvakdqf.supabase.co/functions/v1/cleaner-apply-intake-v2';
 const WHATSAPP_API='https://fdnnvihxjyzfzbvakdqf.supabase.co/functions/v1/whatsapp-contact-preference';
 const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 document.getElementById('days').innerHTML=days.map(d=>`<label class="check"><input type="checkbox" name="availability" value="${d}"><span>${d}</span></label>`).join('');
-const form=document.getElementById('application'),err=document.getElementById('error'),btn=document.getElementById('submit'),route=document.getElementById('rtwRoute'),share=document.getElementById('shareFields'),wa=document.getElementById('whatsappAvailable'),waOptions=document.getElementById('whatsappOptions'),waConsent=document.getElementById('whatsappContactConsent');
-function syncRoute(){const isShare=route.value==='home_office_online';share.style.display=isShare?'grid':'none';document.getElementById('dateOfBirth').required=isShare;document.getElementById('shareCode').required=isShare}
+const form=document.getElementById('application'),err=document.getElementById('error'),btn=document.getElementById('submit'),wa=document.getElementById('whatsappAvailable'),waOptions=document.getElementById('whatsappOptions'),waConsent=document.getElementById('whatsappContactConsent');
 function syncWhatsApp(){waOptions.style.display=wa.checked?'block':'none';waConsent.required=wa.checked;if(!wa.checked)waConsent.checked=false}
-route.addEventListener('change',syncRoute);wa.addEventListener('change',syncWhatsApp);syncRoute();syncWhatsApp();
+wa.addEventListener('change',syncWhatsApp);syncWhatsApp();
 function showError(message){err.textContent=message;err.style.display='block';err.scrollIntoView({behavior:'smooth',block:'center'})}
 form.addEventListener('submit',async event=>{
   event.preventDefault();err.style.display='none';const f=new FormData(form),availability=f.getAll('availability'),services=f.getAll('services');
@@ -100,13 +94,13 @@ form.addEventListener('submit',async event=>{
   if(whatsappAvailable&&!whatsappContactConsent)return showError('Confirm that Cleaning.direct can contact you on WhatsApp, or untick the WhatsApp option.');
   btn.disabled=true;btn.textContent='Saving and starting checks…';
   const q=new URLSearchParams(location.search),referral=(q.get('ref')||'').trim().toLowerCase(),validReferral=/^[a-z0-9]{6,32}$/.test(referral)&&q.get('source')==='cleaner_referral';
-  const payload={kind:'cleaner_application',idempotencyKey:'cleaner-inline-'+Date.now()+'-'+crypto.randomUUID().replaceAll('-','').slice(0,16),website:String(f.get('website')||''),firstName:String(f.get('firstName')||''),lastName:String(f.get('lastName')||''),email:String(f.get('email')||''),phone:String(f.get('phone')||''),addressLine1:String(f.get('addressLine1')||''),addressLine2:String(f.get('addressLine2')||''),city:String(f.get('city')||''),county:String(f.get('county')||''),postcode:String(f.get('postcode')||''),coverageAreas:String(f.get('coverageAreas')||'').split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean),experienceYears:Number(f.get('experienceYears')||0),hasRightToWork:f.get('hasRightToWork')==='yes',hasInsurance:false,selfEmployed:f.get('selfEmployed')==='yes',consent:f.get('consent')==='yes',services,availability,message:String(f.get('message')||''),attribution:{source:q.get('utm_source')||q.get('source')||'direct',medium:q.get('utm_medium')||'one_session_onboarding',campaign:q.get('utm_campaign')||undefined,content:validReferral?referral:undefined},completeOnboarding:true,rtwRoute:String(f.get('rtwRoute')||''),dateOfBirth:String(f.get('dateOfBirth')||''),shareCode:String(f.get('shareCode')||'')};
+  const payload={kind:'cleaner_application',idempotencyKey:'cleaner-inline-'+Date.now()+'-'+crypto.randomUUID().replaceAll('-','').slice(0,16),website:String(f.get('website')||''),firstName:String(f.get('firstName')||''),lastName:String(f.get('lastName')||''),email:String(f.get('email')||''),phone:String(f.get('phone')||''),addressLine1:String(f.get('addressLine1')||''),addressLine2:String(f.get('addressLine2')||''),city:String(f.get('city')||''),county:String(f.get('county')||''),postcode:String(f.get('postcode')||''),coverageAreas:String(f.get('coverageAreas')||'').split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean),experienceYears:Number(f.get('experienceYears')||0),hasRightToWork:f.get('hasRightToWork')==='yes',hasInsurance:false,selfEmployed:f.get('selfEmployed')==='yes',consent:f.get('consent')==='yes',services,availability,message:String(f.get('message')||''),attribution:{source:q.get('utm_source')||q.get('source')||'direct',medium:q.get('utm_medium')||'one_session_onboarding',campaign:q.get('utm_campaign')||undefined,content:validReferral?referral:undefined},completeOnboarding:true,rtwRoute:String(f.get('rtwRoute')||'rtw_dvsp')};
   try{
     const response=await fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});const out=await response.json();
     if(!response.ok||!out.ok){const messages={invalid_contact_details:'Check your name, email, mobile number and UK postcode.',invalid_address:'Enter your full home address and town/city.',invalid_application:'Complete the required work preferences and declarations.',invalid_rtw_route:'Choose the Right to Work route that applies to you.',invalid_rtw_details:'Check the Right to Work share code and date of birth.',rate_limited:'This application has already been submitted several times today.'};throw new Error(messages[out.error]||'We could not save your application just now.');}
     if(out.reference){try{await fetch(WHATSAPP_API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({kind:'cleaner_application',entityId:out.reference,email:payload.email,phone:payload.phone,whatsappNumber,whatsappAvailable,whatsappContactConsent})})}catch{}}
     if(out.continueUrl){location.assign(out.continueUrl);return;}
-    showError('Your application is safely saved, but the next provider step could not start automatically. You do not need to submit it again; Cleaning.direct has logged the recovery case.');
+    form.innerHTML='<h2>Application received</h2><div class="notice">Your application is safely saved. Cleaning.direct will continue the prescribed Right to Work route automatically and contact you only if you need to complete a provider step. You do not need to submit the application again.</div>';window.scrollTo({top:0,behavior:'smooth'});
   }catch(error){showError(error instanceof Error?error.message:'We could not save your application just now.');}
   finally{btn.disabled=false;btn.textContent='Apply and finish onboarding';}
 });
