@@ -101,9 +101,21 @@ function syncWhatsApp(){waOptions.style.display=wa.checked?'block':'none';waCons
 function syncRtw(){const share=rtwRoute.value==='home_office_online';shareFields.style.display=share?'block':'none';manualNote.style.display=rtwRoute.value==='manual_document'?'block':'none';dob.required=share;shareCode.required=share;if(!share){dob.value='';shareCode.value=''}}
 wa.addEventListener('change',syncWhatsApp);rtwRoute.addEventListener('change',syncRtw);syncWhatsApp();syncRtw();
 function showError(message){err.textContent=message;err.style.display='block';err.scrollIntoView({behavior:'smooth',block:'center'})}
+async function fetchWithTimeout(url,options={},timeoutMs=5000){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),timeoutMs);
+  try{return await fetch(url,{...options,signal:controller.signal})}finally{clearTimeout(timer)}
+}
 async function mirrorContinuityApplication(payload){
   try{
-    const r=await fetch(CONTINUITY_MIRROR_API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+    const r=await fetchWithTimeout(CONTINUITY_MIRROR_API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)},5000);
+    const out=await r.json().catch(()=>({}));
+    return r.ok&&out.ok;
+  }catch{return false}
+}
+async function saveNeonBackup(payload){
+  try{
+    const r=await fetchWithTimeout(RECOVERY_API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)},5000);
     const out=await r.json().catch(()=>({}));
     return r.ok&&out.ok;
   }catch{return false}
@@ -163,14 +175,15 @@ form.addEventListener('submit',async event=>{
   try{
     let response=null,out={};
     try{
-      response=await fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+      response=await fetchWithTimeout(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)},5000);
       out=await response.json().catch(()=>({}));
     }catch{}
     if(!response||response.status>=500){
-      const recoveryResponse=await fetch(RECOVERY_API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
-      const recoveryOut=await recoveryResponse.json().catch(()=>({}));
-      if(!recoveryResponse.ok||!recoveryOut.ok)throw new Error('We could not save your application just now.');
-      const mirrored=await mirrorContinuityApplication(payload);
+      const [mirrored,neonSaved]=await Promise.all([
+        mirrorContinuityApplication(payload),
+        saveNeonBackup(payload)
+      ]);
+      if(!mirrored&&!neonSaved)throw new Error('We could not save your application just now.');
       if(mirrored){renderContinuityAccount(payload);}
       else{
         form.innerHTML='<h2>Application received</h2><div class="notice"><strong>Your application is safely saved.</strong> Our main account service is temporarily reconnecting. Your application is protected in continuity storage and you do not need to apply again. Account creation will become available as soon as the continuity link finishes synchronising.</div>';
