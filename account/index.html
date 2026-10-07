@@ -64,6 +64,7 @@
 
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.112.2';
+    const ACCOUNT_API='https://cntynkumizvpiajmfzcj.supabase.co/functions/v1/cleaner-continuity-account';
     const supabase=createClient(
       'https://cntynkumizvpiajmfzcj.supabase.co',
       'sb_publishable_tvQsqfVjAQub5VQLu6WwGw_hIFrvsA_',
@@ -116,40 +117,46 @@
       try{
         const mail=email.value.trim().toLowerCase();
         if(mode==='signup'){
-          const {data,error}=await supabase.auth.signUp({
-            email:mail,
-            password:password.value,
-            options:{
-              data:{
-                full_name:name.value.trim(),
-                account_role:'cleaner',
-                continuity_source:'supabase_outage_2026_10_07'
-              }
-            }
+          const parts=name.value.trim().split(/\s+/).filter(Boolean);
+          const firstName=parts.shift()||'';
+          const lastName=parts.join(' ');
+          const response=await fetch(ACCOUNT_API,{
+            method:'POST',
+            headers:{'content-type':'application/json'},
+            body:JSON.stringify({email:mail,password:password.value,firstName,lastName,website:''})
           });
-          if(error) throw error;
-          if(data.session){
-            showReady();
-          }else{
-            show('Account created. Check your email for the confirmation message, then return to this page and sign in.');
+          const out=await response.json().catch(()=>({}));
+          if(response.status===409&&out.error==='account_exists'){
+            show('An account already exists for that email. Choose Sign in.',true);
             setMode('signin');
             email.value=mail;
+            return;
           }
+          if(response.status===403&&out.error==='application_required'){
+            throw new Error('application_required');
+          }
+          if(!response.ok||!out.ok) throw new Error(out.error||'account_create_failed');
+          const signed=await supabase.auth.signInWithPassword({email:mail,password:password.value});
+          if(signed.error) throw signed.error;
+          if(!signed.data.session) throw new Error('signin_failed');
+          showReady();
         }else{
           const {data,error}=await supabase.auth.signInWithPassword({email:mail,password:password.value});
           if(error) throw error;
-          if(!data.session) throw new Error('Sign-in did not return a session.');
+          if(!data.session) throw new Error('signin_failed');
           showReady();
         }
       }catch(err){
         const raw=String(err?.message||err||'');
-        const friendly=/already registered|already been registered/i.test(raw)
-          ? 'An account already exists for that email. Choose Sign in.'
+        const friendly=/application_required/i.test(raw)
+          ? 'We cannot find a recognised cleaner application for that email yet. Use the same email you used for your Cleaning.direct application, or complete the cleaner application first.'
           : /invalid login credentials/i.test(raw)
           ? 'That email/password combination was not accepted. Check the details or create an account first.'
+          : /invalid_password/i.test(raw)
+          ? 'Use a password with at least 10 characters.'
           : /rate limit/i.test(raw)
           ? 'Too many attempts. Wait a few minutes and try again.'
-          : 'The account service could not complete that request. Please try again shortly.';
+          : 'The account service could not complete that request. Your cleaner application remains safely stored; please try again shortly.';
         show(friendly,true);
       }finally{
         submit.disabled=false;
