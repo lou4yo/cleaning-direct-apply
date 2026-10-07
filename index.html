@@ -90,6 +90,7 @@
 </main>
 <script>
 const API='https://fdnnvihxjyzfzbvakdqf.supabase.co/functions/v1/cleaner-apply-intake-v2';
+const RECOVERY_API='https://br-shy-rain-b4puvq1y-continuity.compute.c-6.us-east-2.aws.neon.tech/cleaner';
 const WHATSAPP_API='https://fdnnvihxjyzfzbvakdqf.supabase.co/functions/v1/whatsapp-contact-preference';
 const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 document.getElementById('days').innerHTML=days.map(d=>`<label class="check"><input type="checkbox" name="availability" value="${d}"><span>${d}</span></label>`).join('');
