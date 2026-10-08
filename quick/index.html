@@ -62,24 +62,32 @@ a{color:#195b42}footer{font-size:13px;color:#5b6a61;margin-top:18px}
 const ENDPOINT="https://cntynkumizvpiajmfzcj.supabase.co/functions/v1/cleaner-apply-recovery";
 const form=document.getElementById("quick"), button=document.getElementById("send"),feedback=document.getElementById("feedback");
 function notice(msg,isError){feedback.hidden=false;feedback.className=isError?"error":"success";feedback.textContent=msg;feedback.scrollIntoView({behavior:"smooth",block:"center"});}
-async function stableKey(email){
-  const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("cleaning-direct-quick-interest-v1:"+email.toLowerCase().trim()));
-  const hex=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,"0")).join("");
-  return "cleaner-quick-"+hex.slice(0,60);
+// Never derive a global retry key from an email address: another applicant
+// could submit using the same email and overwrite a previously queued entry.
+// One browser form attempt keeps its key across network timeouts; editing
+// the form starts a new attempt.
+let pendingSubmissionKey=null;
+let submissionInFlight=false;
+form.addEventListener("input",()=>{pendingSubmissionKey=null;});
+function submissionKey(){
+  if(!pendingSubmissionKey)pendingSubmissionKey="cleaner-quick-"+crypto.randomUUID().replaceAll("-","");
+  return pendingSubmissionKey;
 }
 form.addEventListener("submit",async(e)=>{
   e.preventDefault();
+  if(submissionInFlight)return;
   if(!form.reportValidity())return;
   if(form.website.value.trim())return;
   const get=(n)=>String(form.elements[n].value||"").trim();
   const email=get("email").toLowerCase(), name=get("firstName"),last=get("lastName"),phone=get("phone"),postcode=get("postcode").toUpperCase();
   if(!name||!last||!phone||!postcode||!email){notice("Please complete all required contact details.",true);return;}
+  submissionInFlight=true;
   button.disabled=true;button.textContent="Saving your details…";feedback.hidden=true;
   const timeout=new AbortController(),timer=setTimeout(()=>timeout.abort(),12000);
   try{
     const source=new URLSearchParams(location.search);
     const payload={
-      kind:"cleaner_application",idempotencyKey:await stableKey(email),
+      kind:"cleaner_application",idempotencyKey:submissionKey(),
       firstName:name,lastName:last,email,phone,postcode,
       hasRightToWork:form.elements.rtw.checked,
       selfEmployed:form.elements.self.checked,
@@ -102,7 +110,7 @@ form.addEventListener("submit",async(e)=>{
     notice("Thank you. Your details have been received and saved in Cleaning.direct's temporary application queue. We will contact you to complete the full onboarding and prescribed Right to Work check. Do not submit this form again.",false);
   }catch(err){
     notice("We cannot confirm that your details were saved. Please keep this page open and retry later, or contact cleaning.direct@protonmail.com. Do not email identity documents.",true);
-  }finally{clearTimeout(timer);button.disabled=false;button.textContent="Register my interest";}
+  }finally{submissionInFlight=false;clearTimeout(timer);button.disabled=false;button.textContent="Register my interest";}
 });
 </script>
 </body>
