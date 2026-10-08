@@ -147,9 +147,9 @@ function renderContinuityAccount(payload){
     if(p1.value!==p2.value){accountError.textContent='The passwords do not match.';accountError.style.display='block';return}
     createBtn.disabled=true;createBtn.textContent='Creating account…';
     try{
-      const r=await fetch(CONTINUITY_ACCOUNT_API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({
+      const r=await fetchWithTimeout(CONTINUITY_ACCOUNT_API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({
         email:payload.email,password:p1.value,firstName:payload.firstName,lastName:payload.lastName,website:document.getElementById('continuityWebsite').value
-      })});
+      })},12000);
       const out=await r.json().catch(()=>({}));
       if(r.status===409&&out.error==='account_exists'){
         accountStatus.innerHTML='<strong>Your continuity account already exists.</strong> Your application remains safely linked to this email. You do not need to create it again.';
