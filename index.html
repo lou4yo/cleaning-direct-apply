@@ -163,16 +163,23 @@ function renderContinuityAccount(payload){
   });
   window.scrollTo({top:0,behavior:'smooth'});
 }
+let pendingSubmissionKey=null;
+let submissionInFlight=false;
+// Preserve a key for identical retries after a timeout; a real edit starts a new attempt.
+form.addEventListener('input',()=>{pendingSubmissionKey=null;});
 form.addEventListener('submit',async event=>{
-  event.preventDefault();err.style.display='none';const f=new FormData(form),availability=f.getAll('availability'),services=f.getAll('services');
+  event.preventDefault();
+  if(submissionInFlight)return;
+  err.style.display='none';const f=new FormData(form),availability=f.getAll('availability'),services=f.getAll('services');
   if(!availability.length)return showError('Choose at least one day you are usually available.');
   if(!services.length)return showError('Choose at least one service you can provide.');
   if(!String(f.get('rtwRoute')||''))return showError('Choose the Right to Work route that applies to you.');
   const whatsappAvailable=f.get('whatsappAvailable')==='yes',whatsappContactConsent=f.get('whatsappContactConsent')==='yes',whatsappNumber=String(f.get('whatsappNumber')||f.get('phone')||'').trim();
   if(whatsappAvailable&&!whatsappContactConsent)return showError('Confirm that Cleaning.direct can contact you on WhatsApp, or untick the WhatsApp option.');
+  submissionInFlight=true;
   btn.disabled=true;btn.textContent='Saving and starting checks…';
   const q=new URLSearchParams(location.search),referral=(q.get('ref')||'').trim().toLowerCase(),validReferral=/^[a-z0-9]{6,32}$/.test(referral)&&q.get('source')==='cleaner_referral';
-  const payload={kind:'cleaner_application',idempotencyKey:'cleaner-inline-'+Date.now()+'-'+crypto.randomUUID().replaceAll('-','').slice(0,16),website:String(f.get('website')||''),firstName:String(f.get('firstName')||''),lastName:String(f.get('lastName')||''),email:String(f.get('email')||''),phone:String(f.get('phone')||''),addressLine1:String(f.get('addressLine1')||''),addressLine2:String(f.get('addressLine2')||''),city:String(f.get('city')||''),county:String(f.get('county')||''),postcode:String(f.get('postcode')||''),coverageAreas:String(f.get('coverageAreas')||'').split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean),experienceYears:Number(f.get('experienceYears')||0),hasRightToWork:f.get('hasRightToWork')==='yes',hasInsurance:false,selfEmployed:f.get('selfEmployed')==='yes',consent:f.get('consent')==='yes',services,availability,message:String(f.get('message')||''),attribution:{source:q.get('utm_source')||q.get('source')||'direct',medium:q.get('utm_medium')||'one_session_onboarding',campaign:q.get('utm_campaign')||undefined,content:validReferral?referral:undefined},completeOnboarding:true,rtwRoute:String(f.get('rtwRoute')||''),dateOfBirth:String(f.get('dateOfBirth')||''),shareCode:String(f.get('shareCode')||''),whatsappAvailable,whatsappContactConsent,whatsappNumber};
+  const payload={kind:'cleaner_application',idempotencyKey:pendingSubmissionKey||(pendingSubmissionKey='cleaner-inline-'+Date.now()+'-'+crypto.randomUUID().replaceAll('-','').slice(0,16)),website:String(f.get('website')||''),firstName:String(f.get('firstName')||''),lastName:String(f.get('lastName')||''),email:String(f.get('email')||''),phone:String(f.get('phone')||''),addressLine1:String(f.get('addressLine1')||''),addressLine2:String(f.get('addressLine2')||''),city:String(f.get('city')||''),county:String(f.get('county')||''),postcode:String(f.get('postcode')||''),coverageAreas:String(f.get('coverageAreas')||'').split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean),experienceYears:Number(f.get('experienceYears')||0),hasRightToWork:f.get('hasRightToWork')==='yes',hasInsurance:false,selfEmployed:f.get('selfEmployed')==='yes',consent:f.get('consent')==='yes',services,availability,message:String(f.get('message')||''),attribution:{source:q.get('utm_source')||q.get('source')||'direct',medium:q.get('utm_medium')||'one_session_onboarding',campaign:q.get('utm_campaign')||undefined,content:validReferral?referral:undefined},completeOnboarding:true,rtwRoute:String(f.get('rtwRoute')||''),dateOfBirth:String(f.get('dateOfBirth')||''),shareCode:String(f.get('shareCode')||''),whatsappAvailable,whatsappContactConsent,whatsappNumber};
   try{
     let response=null,out={};
     try{
@@ -197,7 +204,7 @@ form.addEventListener('submit',async event=>{
     if(out.continueUrl){location.assign(out.continueUrl);return;}
     form.innerHTML='<h2>Application received</h2><div class="notice">Your application and Right to Work route are safely saved. Cleaning.direct will continue the prescribed check and contact you only for a step that legally requires your participation. You do not need to submit the application again.</div>';window.scrollTo({top:0,behavior:'smooth'});
   }catch(error){showError(error instanceof Error?error.message:'We could not save your application just now.');}
-  finally{btn.disabled=false;btn.textContent='Apply and start verification';}
+  finally{submissionInFlight=false;btn.disabled=false;btn.textContent='Apply and start verification';}
 });
 </script>
 </body>
