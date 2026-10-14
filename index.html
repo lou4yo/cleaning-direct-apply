@@ -93,7 +93,6 @@
 const API='https://fdnnvihxjyzfzbvakdqf.supabase.co/functions/v1/cleaner-apply-intake-v2';
 const RECOVERY_API='https://br-shy-rain-b4puvq1y-continuity.compute.c-6.us-east-2.aws.neon.tech/cleaner';
 const CONTINUITY_MIRROR_API='https://cntynkumizvpiajmfzcj.supabase.co/functions/v1/cleaner-apply-recovery';
-const CONTINUITY_ACCOUNT_API='https://cntynkumizvpiajmfzcj.supabase.co/functions/v1/cleaner-continuity-account';
 const WHATSAPP_API='https://fdnnvihxjyzfzbvakdqf.supabase.co/functions/v1/whatsapp-contact-preference';
 const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 document.getElementById('days').innerHTML=days.map(d=>`<label class="check"><input type="checkbox" name="availability" value="${d}"><span>${d}</span></label>`).join('');
@@ -122,47 +121,18 @@ async function saveNeonBackup(payload){
   }catch{return false}
 }
 function renderContinuityAccount(payload){
-  form.innerHTML=`
-    <h2>Application received</h2>
-    <div class="notice"><strong>Your application is safely saved.</strong> Our main account service is temporarily reconnecting. Create your Cleaning.direct continuity account below so your onboarding can keep moving without applying again.</div>
-    <h2>Create your account</h2>
-    <div class="grid">
-      <div class="full"><label for="continuityEmail">Email</label><input id="continuityEmail" type="email" value="${String(payload.email||'').replaceAll('&','&amp;').replaceAll('"','&quot;')}" readonly></div>
-      <div><label for="continuityPassword">Password</label><input id="continuityPassword" type="password" minlength="10" maxlength="128" autocomplete="new-password" required><div class="hint">At least 10 characters.</div></div>
-      <div><label for="continuityPasswordConfirm">Confirm password</label><input id="continuityPasswordConfirm" type="password" minlength="10" maxlength="128" autocomplete="new-password" required></div>
-      <input id="continuityWebsite" tabindex="-1" autocomplete="off" style="position:absolute;left:-10000px" aria-hidden="true">
-      <div id="accountError" class="error full" role="alert"></div>
-      <div id="accountStatus" class="notice full" style="display:none"></div>
-      <div class="full"><button id="createContinuityAccount" class="button" type="button">Create account</button></div>
-    </div>
-    <div class="notice"><strong>What happens next:</strong> this continuity account keeps your application associated with your email while the primary account database is restored. You do not need to reapply. Cleaning.direct will reconnect the onboarding record to the main account service when it is available again.</div>`;
-  const createBtn=document.getElementById('createContinuityAccount');
-  const p1=document.getElementById('continuityPassword');
-  const p2=document.getElementById('continuityPasswordConfirm');
-  const accountError=document.getElementById('accountError');
-  const accountStatus=document.getElementById('accountStatus');
-  createBtn.addEventListener('click',async()=>{
-    accountError.style.display='none';accountStatus.style.display='none';
-    if(p1.value.length<10){accountError.textContent='Use a password with at least 10 characters.';accountError.style.display='block';return}
-    if(p1.value!==p2.value){accountError.textContent='The passwords do not match.';accountError.style.display='block';return}
-    createBtn.disabled=true;createBtn.textContent='Creating account…';
-    try{
-      const r=await fetchWithTimeout(CONTINUITY_ACCOUNT_API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({
-        email:payload.email,password:p1.value,firstName:payload.firstName,lastName:payload.lastName,website:document.getElementById('continuityWebsite').value
-      })},12000);
-      const out=await r.json().catch(()=>({}));
-      if(r.status===409&&out.error==='account_exists'){
-        accountStatus.innerHTML='<strong>Your continuity account already exists.</strong> Your application remains safely linked to this email. You do not need to create it again.';
-        accountStatus.style.display='block';createBtn.style.display='none';p1.value='';p2.value='';return;
-      }
-      if(!r.ok||!out.ok)throw new Error(out.error==='application_required'?'Your application is saved, but the account link is still synchronising. Please try Create account again in a moment.':'We could not create the account just now. Your application is still safely saved.');
-      accountStatus.innerHTML='<strong>Account created.</strong> Your Cleaning.direct continuity account is active and linked to this application. You do not need to apply again.';
-      accountStatus.style.display='block';createBtn.style.display='none';p1.value='';p2.value='';
-    }catch(e){accountError.textContent=e instanceof Error?e.message:'We could not create the account just now. Your application is still safely saved.';accountError.style.display='block';}
-    finally{if(createBtn.style.display!=='none'){createBtn.disabled=false;createBtn.textContent='Create account'}}
-  });
+  // Applications continue to be saved, but unverified email addresses must NOT
+  // be converted directly into confirmed Supabase Auth accounts.
+  form.innerHTML='<h2>Application received</h2>'+
+    '<div class="notice" role="status"><strong>Your application has been saved.</strong> '+
+    'Our main account service is reconnecting. To protect your identity, new '+
+    'continuity accounts require a verified email invitation, which is temporarily '+
+    'unavailable. We will contact you at the email address you submitted with '+
+    'the next secure onboarding step. <strong>You do not need to apply again.</strong> '+
+    'Please do not email identity documents or Right to Work codes.</div>';
   window.scrollTo({top:0,behavior:'smooth'});
 }
+
 let pendingSubmissionKey=null;
 let submissionInFlight=false;
 // Preserve a key for identical retries after a timeout; a real edit starts a new attempt.
