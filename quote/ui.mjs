@@ -57,6 +57,8 @@ root.addEventListener("submit",async(event)=>{
     marketingConsent:root.elements.marketingConsent.checked,
     website:root.elements.website.value,
     utmSource:new URLSearchParams(location.search).get("utm_source")||"direct",
+    utmMedium:new URLSearchParams(location.search).get("utm_medium")||"none",
+    utmCampaign:new URLSearchParams(location.search).get("utm_campaign")||"none",
   };
   try{
     const res=await fetch(API,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload),cache:"no-store"});
