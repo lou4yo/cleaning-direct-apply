@@ -1,0 +1,21 @@
+name: Recovery quote contract checks
+on:
+  pull_request:
+    paths:
+      - 'quote/**'
+      - 'supabase/functions/quote-recovery-intake/**'
+      - 'tests/test_quote_contract.mjs'
+      - '.github/workflows/quote-fallback-contract.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/test_quote_contract.mjs
