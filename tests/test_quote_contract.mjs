@@ -58,3 +58,16 @@ test("published Surrey guide figures match estimator and link to a real quote pa
   assert.match(guide,/\.\.\/\.\.\/quote/);
   assert.match(guide,/not a claim about the Surrey market average/i);
 });
+
+
+test("surrey organic traffic lands on accessible fast quote and proper social preview",()=>{
+  const html=readFileSync(new URL("../quote/index.html",import.meta.url),"utf8");
+  const css=readFileSync(new URL("../quote/styles.css",import.meta.url),"utf8");
+  assert.match(html,/href="#quote-form"/);
+  assert.match(html,/No account, password, card or joining fee required/i);
+  assert.match(html,/property="og:url" content="https:\/\/lou4yo\.github\.io\/cleaning-direct-apply\/quote\/"/);
+  assert.match(html,/property="og:image"/);
+  assert.match(html,/name="twitter:card" content="summary_large_image"/);
+  assert.match(css,/\.hero-jump:focus-visible/);
+  assert.match(html,/no area is currently confirmed open for paid booking/i);
+});
