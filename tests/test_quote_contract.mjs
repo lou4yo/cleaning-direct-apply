@@ -71,3 +71,15 @@ test("surrey organic traffic lands on accessible fast quote and proper social pr
   assert.match(css,/\.hero-jump:focus-visible/);
   assert.match(html,/no area is currently confirmed open for paid booking/i);
 });
+
+
+test("quote form stores campaign attribution without browser identity tracking",()=>{
+  const ui=readFileSync(new URL("../quote/ui.mjs",import.meta.url),"utf8");
+  const server=readFileSync(new URL("../supabase/functions/quote-recovery-intake/index.ts",import.meta.url),"utf8");
+  const sql=readFileSync(new URL("../supabase/migrations/20261026_customer_quote_referral_attribution.sql",import.meta.url),"utf8");
+  for(const field of ["utmSource","utmMedium","utmCampaign"]) assert.ok(ui.includes(field));
+  for(const field of ["attribution_source","attribution_medium","attribution_campaign"]) assert.ok(server.includes(field));
+  assert.match(sql,/customer_quote_recovery_queue/);
+  assert.match(sql,/RLS stays enabled/);
+  assert.doesNotMatch(ui,/localStorage|sessionStorage|document\.cookie/i);
+});

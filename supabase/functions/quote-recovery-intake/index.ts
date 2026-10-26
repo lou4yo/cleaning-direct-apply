@@ -69,6 +69,8 @@ Deno.serve(async (req: Request) => {
   const frequency = string(body.frequency,16);
   const idempotencyKey = string(body.idempotencyKey,80);
   const source = string(body.utmSource || "direct",40).toLowerCase().replace(/[^a-z0-9_-]/g,"") || "direct";
+  const medium = string(body.utmMedium || "none",40).toLowerCase().replace(/[^a-z0-9_-]/g,"") || "none";
+  const campaign = string(body.utmCampaign || "none",80).toLowerCase().replace(/[^a-z0-9_-]/g,"") || "none";
   const emailOk = /^[^\s@]{1,64}@[^\s@]{1,185}\.[A-Za-z]{2,}$/.test(email);
   const phoneOk = !phone || /^[\d ()+\-]{7,24}$/.test(phone);
   const postcodeOk = /^(GIR ?0AA|[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2})$/.test(postcode);
@@ -113,7 +115,7 @@ Deno.serve(async (req: Request) => {
     estimated_total_pence:totalPence,
     pricing_version:PRICING_VERSION,consent_version:CONSENT_VERSION,
     contact_consent:true,marketing_consent:body.marketingConsent,
-    attribution_source:source,status:"pending_main_sync",
+    attribution_source:source, attribution_medium:medium, attribution_campaign:campaign,status:"pending_main_sync",
   }).select("id").single();
   if (error) {
     if (error.code === "23505") return response(req,202,{ok:true,status:"already_received",pricePence:totalPence});
