@@ -37,4 +37,6 @@ test("backend uses service role server-side and forbids anonymous data reads",()
   assert.match(server,/contactConsent !== true/);
   assert.match(server,/marketingConsent !== "boolean"/);
   assert.match(server,/error\.code === "23505"/);
+  assert.match(server,/claim_customer_quote_recovery_slot/);
+  assert.match(server,/crypto\.subtle\.sign\("HMAC"/);
 });
