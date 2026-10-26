@@ -83,3 +83,26 @@ test("quote form stores campaign attribution without browser identity tracking",
   assert.match(sql,/RLS stays enabled/);
   assert.doesNotMatch(ui,/localStorage|sessionStorage|document\.cookie/i);
 });
+
+test("Surrey local guide has truthful coverage disclaimers, real prices and conversion destinations",()=>{
+ const guide=readFileSync(new URL("../areas/index.html",import.meta.url),"utf8");
+ const sitemap=readFileSync(new URL("../sitemap.xml",import.meta.url),"utf8");
+ const quote=readFileSync(new URL("../quote/index.html",import.meta.url),"utf8");
+ for(const area of ["Weybridge","Esher","Cobham","Leatherhead"]) assert.match(guide,new RegExp(area));
+ for(const sample of [
+   {propertyType:"flat",bedrooms:1,bathrooms:1,price:"£61.75"},
+   {propertyType:"flat",bedrooms:2,bathrooms:1,price:"£74.10"},
+   {propertyType:"house",bedrooms:2,bathrooms:2,price:"£98.80"},
+   {propertyType:"house",bedrooms:3,bathrooms:2,price:"£111.15"}
+ ]) {
+   const q=calculateQuote({...sample,frequency:"weekly"});
+   assert.equal(new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(q.pricePence/100),sample.price);
+   assert.ok(guide.includes(sample.price));
+ }
+ assert.match(guide,/we are not taking payments or bookings/i);
+ assert.match(guide,/do not advertise any cleaner as verified before checks are complete/i);
+ assert.match(guide,/\.\.\/quote\/\?utm_source=organic/);
+ assert.match(guide,/does not establish a branch or physical office/);
+ assert.match(sitemap,/cleaning-direct-apply\/areas\//);
+ assert.match(quote,/href="\.\.\/areas\/"/);
+});
