@@ -40,3 +40,21 @@ test("backend uses service role server-side and forbids anonymous data reads",()
   assert.match(server,/claim_customer_quote_recovery_slot/);
   assert.match(server,/crypto\.subtle\.sign\("HMAC"/);
 });
+
+
+test("published Surrey guide figures match estimator and link to a real quote page",()=>{
+  const guide=readFileSync(new URL("../guides/surrey-domestic-cleaning-prices/index.html",import.meta.url),"utf8");
+  for (const c of [
+    {p:"flat",bedrooms:1,bathrooms:1,price:"£61.75"},
+    {p:"flat",bedrooms:2,bathrooms:1,price:"£74.10"},
+    {p:"house",bedrooms:2,bathrooms:2,price:"£98.80"},
+    {p:"house",bedrooms:3,bathrooms:2,price:"£111.15"}
+  ]){
+    const q=calculateQuote({propertyType:c.p,bedrooms:c.bedrooms,bathrooms:c.bathrooms,frequency:"weekly"});
+    assert.equal(new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(q.pricePence/100),c.price);
+    assert.ok(guide.includes(c.price));
+  }
+  assert.match(guide,/no postcode is currently confirmed as open/i);
+  assert.match(guide,/\.\.\/\.\.\/quote/);
+  assert.match(guide,/not a claim about the Surrey market average/i);
+});
