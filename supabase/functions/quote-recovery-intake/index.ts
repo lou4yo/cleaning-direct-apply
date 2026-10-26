@@ -86,6 +86,25 @@ Deno.serve(async (req: Request) => {
   const url = Deno.env.get("SUPABASE_URL"), key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!url || !key) return response(req,503,{ok:false,error:"temporarily_unavailable"});
   const db = createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
+  // No raw IP stored: HMAC is keyed with the existing server-only secret.
+  // Global 120/hour and per-source 5/hour limits fail closed if the RPC fails.
+  const ip = (req.headers.get("cf-connecting-ip") ||
+    req.headers.get("x-real-ip") ||
+    (req.headers.get("x-forwarded-for") || "").split(",")[0] ||
+    "unavailable").trim().slice(0,80);
+  const encoder = new TextEncoder();
+  const macKey = await crypto.subtle.importKey("raw",encoder.encode(key),
+    {name:"HMAC",hash:"SHA-256"},false,["sign"]);
+  const signature = await crypto.subtle.sign("HMAC",macKey,encoder.encode(ip));
+  const fingerprint = [...new Uint8Array(signature)]
+    .map(v=>v.toString(16).padStart(2,"0")).join("");
+  const { data:slot, error:rateError } = await db.rpc("claim_customer_quote_recovery_slot",
+    {p_fingerprint:fingerprint});
+  if (rateError) {
+    console.error("quote_recovery_limit_failed",String(rateError.code||"unknown"));
+    return response(req,503,{ok:false,error:"temporarily_unavailable"});
+  }
+  if (slot !== true) return response(req,429,{ok:false,error:"try_again_later"});
   const {data,error} = await db.from("customer_quote_recovery_queue").insert({
     idempotency_key:idempotencyKey,
     first_name:first,email,phone,postcode,
