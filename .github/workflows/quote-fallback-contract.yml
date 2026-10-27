@@ -1,9 +1,16 @@
-name: Recovery quote contract checks
+name: Legacy Pages first-party-only intake guard
 on:
   pull_request:
     paths:
+      - 'index.html'
+      - 'account/index.html'
+      - 'assignment-requirements/index.html'
+      - 'legal-pack/index.html'
+      - 'rtw/index.html'
       - 'quote/**'
-      - 'supabase/functions/quote-recovery-intake/**'
+      - 'areas/index.html'
+      - 'guides/surrey-domestic-cleaning-prices/index.html'
+      - 'sitemap.xml'
       - 'tests/test_quote_contract.mjs'
       - '.github/workflows/quote-fallback-contract.yml'
   workflow_dispatch:
