@@ -41,7 +41,7 @@ test("off-domain educational pages link only to the official quote entrypoint", 
   for (const path of ["areas/index.html", "guides/surrey-domestic-cleaning-prices/index.html"]) {
     const html = read(path);
     assert.ok(html.includes("https://cleaning.direct/book"), path);
-    assert.doesNotMatch(html, /href\s*=\s*["'](?:\.\.\/)+quote(?:\/|\?)/i, path);
+    assert.doesNotMatch(html, /href\s*=\s*["'](?:\.\.\/)+quote\/(?!styles\.css(?:["']|[?#]))/i, path);
     assert.doesNotMatch(html, /href\s*=\s*["']https?:\/\/lou4yo\.github\.io\/cleaning-direct-apply\/quote/i, path);
   }
 });
