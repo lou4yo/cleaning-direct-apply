@@ -1,108 +1,61 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {calculateQuote} from "../quote/logic.mjs";
 
-test("small flat has an affordable positive-contribution estimate", ()=>{
-  const q=calculateQuote({propertyType:"flat",bedrooms:1,bathrooms:1,frequency:"weekly"});
-  assert.deepEqual(q,{quarterHours:10,discount:5,pricePence:6175});
-  assert.ok(q.pricePence > (q.quarterHours/4)*1800);
-});
-test("weekly discount cannot make customer price loss-making against £18/hour", ()=>{
-  for(const propertyType of ["flat","house"])for(let bedrooms=1;bedrooms<=6;bedrooms++)
-    for(let bathrooms=1;bathrooms<=4;bathrooms++)
-      for(const frequency of ["weekly","fortnightly","monthly","one_off"]){
-        const q=calculateQuote({propertyType,bedrooms,bathrooms,frequency});
-        assert.ok(q.pricePence > q.quarterHours/4*1800);
-        assert.ok(q.pricePence<=30000);
-      }
-});
-test("malformed options rejected",()=>{
-  assert.throws(()=>calculateQuote({propertyType:"house",bedrooms:7,bathrooms:1,frequency:"weekly"}));
-});
-test("frontend-only files do not include private server credentials or bookings",()=>{
-  const html=readFileSync(new URL("../quote/index.html",import.meta.url),"utf8");
-  const js=readFileSync(new URL("../quote/ui.mjs",import.meta.url),"utf8");
-  assert.match(html,/contactConsent/);
-  assert.match(html,/marketingConsent/);
-  assert.match(html,/cleaning.direct\/privacy/);
-  assert.match(html,/No card/);
-  assert.match(html,/no area is currently confirmed open/i);
-  assert.doesNotMatch(html+js,/sb_secret_|service.role.key\s*[:=]|sk_test_|sk_live_/i);
-  assert.doesNotMatch(js,/bookings\.insert|payment_intent|stripe/i);
-});
-test("backend uses service role server-side and forbids anonymous data reads",()=>{
-  const server=readFileSync(new URL("../supabase/functions/quote-recovery-intake/index.ts",import.meta.url),"utf8");
-  assert.match(server,/Deno\.env\.get\("SUPABASE_SERVICE_ROLE_KEY"\)/);
-  assert.match(server,/contactConsent !== true/);
-  assert.match(server,/marketingConsent !== "boolean"/);
-  assert.match(server,/error\.code === "23505"/);
-  assert.match(server,/claim_customer_quote_recovery_slot/);
-  assert.match(server,/crypto\.subtle\.sign\("HMAC"/);
-});
+// Owner directive 26 Oct 2026: no quote or cleaner application should collect
+// personal data on this obsolete GitHub Pages origin. The actual hosted
+// cleaning.direct site must pass separate real lead-save/RTW launch gates.
+function read(path) {
+  return readFileSync(new URL("../" + path, import.meta.url), "utf8");
+}
 
+const retired = new Map([
+  ["index.html", "https://cleaning.direct/cleaners/apply"],
+  ["account/index.html", "https://cleaning.direct/login"],
+  ["assignment-requirements/index.html", "https://cleaning.direct/login"],
+  ["legal-pack/index.html", "https://cleaning.direct/cleaners/apply"],
+  ["rtw/index.html", "https://cleaning.direct/login"],
+  ["quote/index.html", "https://cleaning.direct/book"],
+]);
 
-test("published Surrey guide figures match estimator and link to a real quote page",()=>{
-  const guide=readFileSync(new URL("../guides/surrey-domestic-cleaning-prices/index.html",import.meta.url),"utf8");
-  for (const c of [
-    {p:"flat",bedrooms:1,bathrooms:1,price:"£61.75"},
-    {p:"flat",bedrooms:2,bathrooms:1,price:"£74.10"},
-    {p:"house",bedrooms:2,bathrooms:2,price:"£98.80"},
-    {p:"house",bedrooms:3,bathrooms:2,price:"£111.15"}
-  ]){
-    const q=calculateQuote({propertyType:c.p,bedrooms:c.bedrooms,bathrooms:c.bathrooms,frequency:"weekly"});
-    assert.equal(new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(q.pricePence/100),c.price);
-    assert.ok(guide.includes(c.price));
+test("every legacy intake route is a noindex static notice without a form or side effects", () => {
+  for (const [path, firstParty] of retired) {
+    const html = read(path);
+    assert.match(html, /<meta name="robots" content="noindex,nofollow">/);
+    assert.ok(html.includes('rel="canonical" href="' + firstParty + '"'), path);
+    assert.ok(html.includes('href="' + firstParty + '"'), path);
+    assert.doesNotMatch(html, /<form\b|<input\b|<script\b|<iframe\b/i, path);
+    assert.doesNotMatch(html, /supabase\.co|neon\.tech|fetch\s*\(|XMLHttpRequest|stripe\.com/i, path);
+    assert.match(html, /no longer accepts personal details/i, path);
   }
-  assert.match(guide,/no postcode is currently confirmed as open/i);
-  assert.match(guide,/\.\.\/\.\.\/quote/);
-  assert.match(guide,/not a claim about the Surrey market average/i);
 });
 
-
-test("surrey organic traffic lands on accessible fast quote and proper social preview",()=>{
-  const html=readFileSync(new URL("../quote/index.html",import.meta.url),"utf8");
-  const css=readFileSync(new URL("../quote/styles.css",import.meta.url),"utf8");
-  assert.match(html,/href="#quote-form"/);
-  assert.match(html,/No account, password, card or joining fee required/i);
-  assert.match(html,/property="og:url" content="https:\/\/lou4yo\.github\.io\/cleaning-direct-apply\/quote\/"/);
-  assert.match(html,/property="og:image"/);
-  assert.match(html,/name="twitter:card" content="summary_large_image"/);
-  assert.match(css,/\.hero-jump:focus-visible/);
-  assert.match(html,/no area is currently confirmed open for paid booking/i);
+test("retired quote route cannot claim a booking, payment or saved lead", () => {
+  const html = read("quote/index.html");
+  assert.match(html, /non-binding estimates/i);
+  assert.match(html, /checkout remains disabled/i);
+  assert.match(html, /retired page will not save an enquiry/i);
 });
 
-
-test("quote form stores campaign attribution without browser identity tracking",()=>{
-  const ui=readFileSync(new URL("../quote/ui.mjs",import.meta.url),"utf8");
-  const server=readFileSync(new URL("../supabase/functions/quote-recovery-intake/index.ts",import.meta.url),"utf8");
-  const sql=readFileSync(new URL("../supabase/migrations/20261026_customer_quote_referral_attribution.sql",import.meta.url),"utf8");
-  for(const field of ["utmSource","utmMedium","utmCampaign"]) assert.ok(ui.includes(field));
-  for(const field of ["attribution_source","attribution_medium","attribution_campaign"]) assert.ok(server.includes(field));
-  assert.match(sql,/customer_quote_recovery_queue/);
-  assert.match(sql,/RLS stays enabled/);
-  assert.doesNotMatch(ui,/localStorage|sessionStorage|document\.cookie/i);
+test("off-domain educational pages link only to the official quote entrypoint", () => {
+  for (const path of ["areas/index.html", "guides/surrey-domestic-cleaning-prices/index.html"]) {
+    const html = read(path);
+    assert.ok(html.includes("https://cleaning.direct/book"), path);
+    assert.doesNotMatch(html, /href\s*=\s*["'](?:\.\.\/)+quote\/(?!styles\.css(?:["']|[?#]))/i, path);
+    assert.doesNotMatch(html, /href\s*=\s*["']https?:\/\/lou4yo\.github\.io\/cleaning-direct-apply\/quote/i, path);
+  }
 });
 
-test("Surrey local guide has truthful coverage disclaimers, real prices and conversion destinations",()=>{
- const guide=readFileSync(new URL("../areas/index.html",import.meta.url),"utf8");
- const sitemap=readFileSync(new URL("../sitemap.xml",import.meta.url),"utf8");
- const quote=readFileSync(new URL("../quote/index.html",import.meta.url),"utf8");
- for(const area of ["Weybridge","Esher","Cobham","Leatherhead"]) assert.match(guide,new RegExp(area));
- for(const sample of [
-   {propertyType:"flat",bedrooms:1,bathrooms:1,price:"£61.75"},
-   {propertyType:"flat",bedrooms:2,bathrooms:1,price:"£74.10"},
-   {propertyType:"house",bedrooms:2,bathrooms:2,price:"£98.80"},
-   {propertyType:"house",bedrooms:3,bathrooms:2,price:"£111.15"}
- ]) {
-   const q=calculateQuote({...sample,frequency:"weekly"});
-   assert.equal(new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(q.pricePence/100),sample.price);
-   assert.ok(guide.includes(sample.price));
- }
- assert.match(guide,/we are not taking payments or bookings/i);
- assert.match(guide,/do not advertise any cleaner as verified before checks are complete/i);
- assert.match(guide,/\.\.\/quote\/\?utm_source=organic/);
- assert.match(guide,/does not establish a branch or physical office/);
- assert.match(sitemap,/cleaning-direct-apply\/areas\//);
- assert.match(quote,/href="\.\.\/areas\/"/);
+test("sitemap excludes obsolete off-domain quote and quick-application routes", () => {
+  const sitemap = read("sitemap.xml");
+  assert.doesNotMatch(sitemap, /cleaning-direct-apply\/(?:quote|quick)\//i);
+  assert.match(sitemap, /cleaning-direct-apply\/areas\//i);
+});
+
+test("first-party destination is never an off-domain prototype", () => {
+  for (const [path, expected] of retired) {
+    const html = read(path);
+    assert.ok(expected.startsWith("https://cleaning.direct/"), path);
+    assert.doesNotMatch(html, /href\s*=\s*["']https?:\/\/(?:lou4yo\.)?github\.io/i, path);
+  }
 });
